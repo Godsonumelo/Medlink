@@ -1,0 +1,73 @@
+export const DOCTORS = [
+  {
+    id: 1,
+    name: "Dr. Sarah Johnson",
+    specialty: "Cardiologist",
+    rating: 5,
+    reviews: 128,
+    image: "/images/doctors/doctor-1.jpg",
+    availability: "Available Today",
+    location: "City Medical Center",
+    experience: "12 years",
+    about:
+      "Dr. Sarah Johnson is a board-certified cardiologist with over 12 years of experience in diagnosing and treating heart conditions.",
+    education: "MD - Harvard Medical School",
+    languages: ["English", "Spanish"],
+  },
+  {
+    id: 2,
+    name: "Dr. Michael Chen",
+    specialty: "Neurologist",
+    rating: 5,
+    reviews: 96,
+    image: "/images/doctors/doctor-2.jpg",
+    availability: "Available Tomorrow",
+    location: "St. Mary Hospital",
+    experience: "15 years",
+    about:
+      "Dr. Michael Chen specializes in neurological disorders with a focus on stroke prevention and treatment.",
+    education: "MD - Johns Hopkins University",
+    languages: ["English", "Mandarin"],
+  },
+  {
+    id: 3,
+    name: "Dr. Emily Rodriguez",
+    specialty: "Pediatrician",
+    rating: 5,
+    reviews: 154,
+    image: "/images/doctors/doctor-3.jpg",
+    availability: "Available Today",
+    location: "Children's Health Clinic",
+    experience: "10 years",
+    about:
+      "Dr. Emily Rodriguez is a dedicated pediatrician passionate about child health and development.",
+    education: "MD - Stanford University",
+    languages: ["English", "Spanish"],
+  },
+  {
+    id: 4,
+    name: "Dr. James Williams",
+    specialty: "Orthopedic Surgeon",
+    rating: 5,
+    reviews: 87,
+    image: "/images/doctors/doctor-4.jpg",
+    availability: "Available in 2 Days",
+    location: "Orthopedic Center",
+    experience: "18 years",
+    about:
+      "Dr. James Williams is an experienced orthopedic surgeon specializing in sports medicine and joint replacement.",
+    education: "MD - Yale School of Medicine",
+    languages: ["English"],
+  },
+];
+
+export const DOCTOR_SPECIALTIES = [
+  "Cardiologist",
+  "Neurologist",
+  "Pediatrician",
+  "Orthopedic Surgeon",
+  "Dermatologist",
+  "Ophthalmologist",
+  "General Physician",
+  "Psychiatrist",
+];
