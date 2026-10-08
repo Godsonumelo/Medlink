@@ -1,7 +1,62 @@
 import { Router } from "express";
 import db from "../db.js";
+import { requireAuth, requireRole } from "../auth.js";
 
 const router = Router();
+
+export function listAllDoctors() {
+  const accounts = db
+    .prepare("SELECT id, name, email, created_at FROM users WHERE role = 'doctor' ORDER BY created_at DESC")
+    .all();
+  const profiles = db.prepare("SELECT * FROM doctors ORDER BY name ASC").all();
+
+  const accountsByEmail = new Map(
+    accounts.map((u) => [String(u.email || "").toLowerCase(), u])
+  );
+  const matchedAccountIds = new Set();
+
+  const list = profiles.map((p) => {
+    const account = p.email
+      ? accountsByEmail.get(String(p.email).toLowerCase())
+      : null;
+    if (account) matchedAccountIds.add(account.id);
+    return {
+      key: `profile-${p.id}`,
+      name: p.name,
+      specialty: p.specialty,
+      hospital: p.hospital,
+      email: p.email,
+      phone: p.phone || null,
+      image: p.image || null,
+      rating: p.rating,
+      patients: p.patients,
+      available: !!p.available,
+      signedUp: !!account,
+      joinedAt: account ? account.created_at : p.created_at,
+    };
+  });
+
+  for (const u of accounts) {
+    if (matchedAccountIds.has(u.id)) continue;
+    list.push({
+      key: `user-${u.id}`,
+      name: u.name,
+      specialty: null,
+      hospital: null,
+      email: u.email,
+      phone: null,
+      image: null,
+      rating: null,
+      patients: 0,
+      available: false,
+      signedUp: true,
+      joinedAt: u.created_at,
+    });
+  }
+
+  list.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  return list;
+}
 
 function publicDoctor(row) {
   return {
@@ -122,6 +177,20 @@ router.get("/:id/availability", (req, res) => {
     res.json({ data, total: data.length });
   } catch (err) {
     serverError(res, err, "Failed to fetch availability");
+  }
+});
+
+// GET /api/doctors/all (admin) — must be registered before /:id
+router.get("/all", requireAuth, requireRole("admin"), (req, res) => {
+  try {
+    const data = listAllDoctors();
+    res.json({
+      data,
+      total: data.length,
+      signedUp: data.filter((d) => d.signedUp).length,
+    });
+  } catch (err) {
+    serverError(res, err, "Failed to fetch all doctors");
   }
 });
 

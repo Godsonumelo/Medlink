@@ -10,6 +10,7 @@ import notificationRoutes from "./routes/notifications.js";
 import settingRoutes from "./routes/settings.js";
 import vitalRoutes from "./routes/vitals.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import userRoutes from "./routes/users.js";
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/vitals", vitalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/users", userRoutes);
 
 app.use("/api", (req, res) => {
   res.status(404).json({ message: "Route not found" });

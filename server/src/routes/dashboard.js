@@ -258,17 +258,56 @@ function adminDashboard(req, res) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6);
 
-  const topDoctors = db
-    .prepare("SELECT id, name, specialty, rating, patients, image FROM doctors ORDER BY rating DESC, patients DESC LIMIT 4")
-    .all()
-    .map((d) => ({
-      id: d.id,
-      name: d.name,
-      specialty: d.specialty,
-      rating: d.rating,
-      patients: d.patients,
-      image: d.image,
-    }));
+  const doctorAccounts = db
+    .prepare("SELECT id, name, email, created_at FROM users WHERE role = 'doctor' ORDER BY created_at DESC")
+    .all();
+  const doctorProfiles = db
+    .prepare("SELECT * FROM doctors ORDER BY name ASC")
+    .all();
+
+  const accountsByEmail = new Map(
+    doctorAccounts.map((u) => [String(u.email || "").toLowerCase(), u])
+  );
+  const matchedAccountIds = new Set();
+
+  const allDoctors = doctorProfiles.map((p) => {
+    const account = p.email
+      ? accountsByEmail.get(String(p.email).toLowerCase())
+      : null;
+    if (account) matchedAccountIds.add(account.id);
+    return {
+      key: `profile-${p.id}`,
+      name: p.name,
+      specialty: p.specialty,
+      hospital: p.hospital,
+      email: p.email,
+      image: p.image || null,
+      rating: p.rating,
+      patients: p.patients,
+      available: !!p.available,
+      signedUp: !!account,
+      joinedAt: account ? account.created_at : p.created_at,
+    };
+  });
+
+  for (const u of doctorAccounts) {
+    if (matchedAccountIds.has(u.id)) continue;
+    allDoctors.push({
+      key: `user-${u.id}`,
+      name: u.name,
+      specialty: null,
+      hospital: null,
+      email: u.email,
+      image: null,
+      rating: null,
+      patients: 0,
+      available: false,
+      signedUp: true,
+      joinedAt: u.created_at,
+    });
+  }
+
+  allDoctors.sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
   res.json({
     role: "admin",
@@ -285,7 +324,9 @@ function adminDashboard(req, res) {
       totalRecords: recordsTotal.c,
     },
     recentActivity: activity,
-    topDoctors,
+    allDoctors,
+    doctorCount: allDoctors.length,
+    signedUpCount: allDoctors.filter((d) => d.signedUp).length,
   });
 }
 

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Users, Stethoscope, Building2, DollarSign, TrendingUp, Activity } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import StatCard from "../../components/dashboard/StatCard";
 import LiveBadge from "../../components/dashboard/LiveBadge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -49,7 +48,9 @@ export default function AdminDashboard() {
   const s = data?.stats || {};
   const qs = data?.quickStats || {};
   const recentActivity = data?.recentActivity || [];
-  const topDoctors = data?.topDoctors || [];
+  const allDoctors = data?.allDoctors || [];
+  const doctorCount = data?.doctorCount ?? allDoctors.length;
+  const signedUpCount = data?.signedUpCount ?? allDoctors.filter((d) => d.signedUp).length;
 
   const stats = [
     { icon: Users, label: "Total Users", value: s.totalUsers ?? "—", color: "primary" },
@@ -137,38 +138,48 @@ export default function AdminDashboard() {
 
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="heading-4 text-dark">Top Doctors</h2>
-            <Link to="/dashboard/doctors" className="body-small text-primary font-medium hover:text-primary-dark">
-              View All
-            </Link>
+            <h2 className="heading-4 text-dark">All Doctors</h2>
+            <span className="caption font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+              {signedUpCount} signed up / {doctorCount}
+            </span>
           </div>
-          <div className="bg-card rounded-[20px] shadow-card p-6 space-y-4">
-            {topDoctors.length > 0 ? (
-              topDoctors.map((doctor, i) => (
-                <div key={doctor.id || i} className={`flex items-center gap-3 ${i !== topDoctors.length - 1 ? "pb-4 border-b border-gray-lighter" : ""}`}>
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
-                    {doctor.image ? (
-                      <img
-                        src={doctor.image}
-                        alt={doctor.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white body-small font-medium">
-                        {doctor.name?.split(" ").map((n) => n[0]).join("").slice(0, 2) || "DR"}
-                      </span>
-                    )}
+          <div className="bg-card rounded-[20px] shadow-card p-6">
+            {allDoctors.length > 0 ? (
+              <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
+                {allDoctors.map((doctor, i) => (
+                  <div
+                    key={doctor.key || doctor.email || i}
+                    className={`flex items-center gap-3 ${i !== allDoctors.length - 1 ? "pb-4 border-b border-gray-lighter" : ""}`}
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                      {doctor.image ? (
+                        <img
+                          src={doctor.image}
+                          alt={doctor.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-primary body-small font-medium">
+                          {doctor.name?.split(" ").map((n) => n[0]).join("").slice(0, 2) || "DR"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="body-small font-medium text-dark truncate">{doctor.name}</p>
+                      <p className="caption text-gray truncate">
+                        {doctor.specialty || doctor.email}
+                      </p>
+                    </div>
+                    <span
+                      className={`caption px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                        doctor.signedUp ? "bg-success/10 text-success" : "bg-gray/10 text-gray"
+                      }`}
+                    >
+                      {doctor.signedUp ? "Signed up" : "No account"}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="body-small font-medium text-dark truncate">{doctor.name}</p>
-                    <p className="caption text-gray">{doctor.specialty}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="body-small font-medium text-dark">{doctor.patients || "—"}</p>
-                    <p className="caption text-gray">patients</p>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
               <p className="body-small text-gray text-center py-4">No doctors found</p>
             )}

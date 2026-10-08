@@ -80,12 +80,23 @@ router.post("/register", async (req, res) => {
     if (findUserByEmail(email)) {
       return res.status(409).json({ message: "An account with this email already exists" });
     }
-    const validRoles = ["patient"];
+    const validRoles = ["patient", "doctor"];
     const selectedRole = validRoles.includes(role) ? role : "patient";
     const hashed = await bcrypt.hash(password, 10);
+    const now = new Date().toISOString();
     const result = db
       .prepare("INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)")
-      .run(name, email, hashed, selectedRole, new Date().toISOString());
+      .run(name, email, hashed, selectedRole, now);
+    if (selectedRole === "doctor") {
+      const hasProfile = db
+        .prepare("SELECT 1 FROM doctors WHERE LOWER(email) = LOWER(?)")
+        .get(email);
+      if (!hasProfile) {
+        db.prepare(
+          "INSERT INTO doctors (name, email, specialty, created_at) VALUES (?, ?, 'General Practice', ?)"
+        ).run(name, email, now);
+      }
+    }
     const row = findUserById(result.lastInsertRowid);
     res.status(201).json(authResponse(row));
   } catch (err) {
