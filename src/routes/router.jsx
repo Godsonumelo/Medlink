@@ -20,6 +20,15 @@ import ResetPassword from "../pages/ResetPassword";
 import NotFound from "../pages/NotFound";
 import DashboardRouter from "../pages/dashboard/DashboardRouter";
 import AdminDashboard from "../pages/dashboard/AdminDashboard";
+import AdminUsers from "../pages/dashboard/AdminUsers";
+import AdminDoctors from "../pages/dashboard/AdminDoctors";
+import { useAuth } from "../hooks/useAuth";
+
+function DoctorsRoute() {
+  const { user } = useAuth();
+  if (user?.role === "admin") return <AdminDoctors />;
+  return <Doctors />;
+}
 
 const router = createBrowserRouter([
   {
@@ -63,7 +72,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardRouter /> },
       { path: "appointments", element: <Appointments /> },
-      { path: "doctors", element: <Doctors /> },
+      { path: "doctors", element: <DoctorsRoute /> },
       {
         path: "patients",
         element: (
@@ -94,7 +103,7 @@ const router = createBrowserRouter([
         path: "users",
         element: (
           <ProtectedRoute roles={["admin"]}>
-            <AdminDashboard />
+            <AdminUsers />
           </ProtectedRoute>
         ),
       },

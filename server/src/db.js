@@ -212,15 +212,6 @@ if (!doctorColumns.includes("image")) {
   db.exec('ALTER TABLE doctors ADD COLUMN image TEXT');
 }
 
-const doctorsWithoutImages = db.prepare("SELECT id FROM doctors WHERE image IS NULL").all();
-if (doctorsWithoutImages.length > 0) {
-  const imagePool = ["/images/doctors/doctor-1.jpg", "/images/doctors/doctor-2.jpg", "/images/doctors/doctor-3.jpg", "/images/doctors/doctor-4.jpg"];
-  const stmt = db.prepare("UPDATE doctors SET image = ? WHERE id = ?");
-  for (let i = 0; i < doctorsWithoutImages.length; i++) {
-    stmt.run(imagePool[i % imagePool.length], doctorsWithoutImages[i].id);
-  }
-}
-
 function seed() {
   const doctorCount = db.prepare("SELECT COUNT(*) AS c FROM doctors").get().c;
   if (doctorCount > 0) return;

@@ -3,6 +3,8 @@ import api from "./api";
 export const doctorService = {
   getAll: (params, signal) => api.get("/doctors", { params, signal }),
 
+  getAllAdmin: (signal) => api.get("/doctors/all", { signal }),
+
   getById: (id, signal) => api.get(`/doctors/${id}`, { signal }),
 
   getBySpecialty: (specialty, signal) => api.get(`/doctors/specialty/${specialty}`, { signal }),

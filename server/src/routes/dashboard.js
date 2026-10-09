@@ -1,6 +1,7 @@
 import { Router } from "express";
 import db from "../db.js";
 import { requireAuth } from "../auth.js";
+import { listAllDoctors } from "./doctors.js";
 
 const router = Router();
 
@@ -119,12 +120,15 @@ function doctorDashboard(req, res) {
       .get(userRow.email);
   }
   if (!doctor) {
-    doctor = db
-      .prepare("SELECT * FROM doctors ORDER BY id LIMIT 1")
-      .get();
-  }
-  if (!doctor) {
-    return res.status(404).json({ message: "No doctor profile found for this account" });
+    const fallbackName = userRow ? userRow.name : "Doctor";
+    return res.json({
+      role: "doctor",
+      generatedAt: new Date().toISOString(),
+      doctor: { id: null, name: fallbackName, specialty: null, rating: 0, patients: 0 },
+      stats: { totalPatients: 0, todayAppointments: 0, monthlyEarnings: 0, avgRating: 0 },
+      todaySchedule: [],
+      recentPatients: [],
+    });
   }
 
   const today = localDateKey();
@@ -200,10 +204,12 @@ function adminDashboard(req, res) {
   const month = monthKey();
 
   const totalUsers = db.prepare("SELECT COUNT(*) AS c FROM users").get();
-  const activeDoctors = db
-    .prepare("SELECT COUNT(*) AS c FROM doctors WHERE available = 1")
+  const doctorsSignedUp = db
+    .prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'doctor'")
     .get();
-  const partnerHospitals = db.prepare("SELECT COUNT(*) AS c FROM hospitals").get();
+  const totalAppointments = db
+    .prepare("SELECT COUNT(*) AS c FROM appointments")
+    .get();
   const completedThisMonth = db
     .prepare("SELECT COUNT(*) AS c FROM appointments WHERE status != 'cancelled' AND substr(date, 1, 7) = ?")
     .get(month);
@@ -258,64 +264,15 @@ function adminDashboard(req, res) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6);
 
-  const doctorAccounts = db
-    .prepare("SELECT id, name, email, created_at FROM users WHERE role = 'doctor' ORDER BY created_at DESC")
-    .all();
-  const doctorProfiles = db
-    .prepare("SELECT * FROM doctors ORDER BY name ASC")
-    .all();
-
-  const accountsByEmail = new Map(
-    doctorAccounts.map((u) => [String(u.email || "").toLowerCase(), u])
-  );
-  const matchedAccountIds = new Set();
-
-  const allDoctors = doctorProfiles.map((p) => {
-    const account = p.email
-      ? accountsByEmail.get(String(p.email).toLowerCase())
-      : null;
-    if (account) matchedAccountIds.add(account.id);
-    return {
-      key: `profile-${p.id}`,
-      name: p.name,
-      specialty: p.specialty,
-      hospital: p.hospital,
-      email: p.email,
-      image: p.image || null,
-      rating: p.rating,
-      patients: p.patients,
-      available: !!p.available,
-      signedUp: !!account,
-      joinedAt: account ? account.created_at : p.created_at,
-    };
-  });
-
-  for (const u of doctorAccounts) {
-    if (matchedAccountIds.has(u.id)) continue;
-    allDoctors.push({
-      key: `user-${u.id}`,
-      name: u.name,
-      specialty: null,
-      hospital: null,
-      email: u.email,
-      image: null,
-      rating: null,
-      patients: 0,
-      available: false,
-      signedUp: true,
-      joinedAt: u.created_at,
-    });
-  }
-
-  allDoctors.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const allDoctors = listAllDoctors();
 
   res.json({
     role: "admin",
     generatedAt: new Date().toISOString(),
     stats: {
       totalUsers: totalUsers.c,
-      activeDoctors: activeDoctors.c,
-      partnerHospitals: partnerHospitals.c,
+      doctorsSignedUp: doctorsSignedUp.c,
+      totalAppointments: totalAppointments.c,
       revenue: completedThisMonth.c * CONSULTATION_FEE,
     },
     quickStats: {
